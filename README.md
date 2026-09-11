@@ -1,31 +1,28 @@
-# Ascent Learning — Personalized Tutoring
+# Ascent Learning
 
-A complete, four-page static website based on Personalized Tutoring Website.pdf.
-Plain HTML, CSS, and JavaScript; no framework, dependencies, build step, or externally hosted assets.
+Four static HTML pages. No build step. Serve the repository over HTTP locally, or upload the HTML files plus css/, js/ and images/ to the existing static host.
 
-## Open and edit
-Open index.html in any current browser. All pages and assets use relative paths and also work when uploaded to a host. Edit copy directly in the four HTML files, shared styles in css/style.css, and interactions in js/script.js.
+## September 2026 update
 
-The partials folder provides reusable header/footer source markup. These are deliberately embedded in each page rather than fetched at runtime so navigation works from disk, without JavaScript, and for search engines. After editing a partial, copy it into all four HTML pages, preserving each page's aria-current="page" on its active navigation link. No build tools are needed.
+Georgia remains the display font, including the original home headline. All supporting typography uses Inter, loaded through Google Fonts. Aarushi’s supplied portrait is stored locally and displayed with CSS object positioning. The biography now reflects 10 years in Cupertino Union School District, kindergarten through grade 8, and her supplied interests. The home page introduces Aarushi and uses a consistent company voice. LinkedIn opens in a separate tab. Visible copy avoids hyphens and dash punctuation; HTML attributes, URLs and code identifiers retain required hyphens.
 
-## Connect a custom domain
-1. Upload index.html, about.html, services.html, contact.html, css/ and js/ to your static host's public document root. Include images/ if adding your own assets. README.md and partials/ do not need to be public.
-2. Add your custom domain in the hosting account. Copy the DNS record values supplied by that host into your domain registrar's DNS settings. Exact values depend on the host and domain; none are invented here.
-3. Enable HTTPS and choose the primary www or non-www address, redirecting the alternative in the host's settings.
-4. Add the final absolute canonical URL and og:url to each HTML head, using its actual page path. Unique titles, descriptions, semantic headings and viewport settings are already included. No placeholder domain is embedded.
-5. Optionally add a sitemap.xml with all four final absolute page URLs and submit it to your search engine webmaster tools.
-6. Visit every page on the real domain and verify phone, email and consultation links.
+Glass styling uses layered gradients, translucent backgrounds, curved inset highlights, blur, deep shadows, responsive pointer lighting and entrance animations. Reduced motion preferences disable movement. Content remains available without JavaScript. Header and footer source copies are in partials/; keep the embedded copies in each page synchronized.
 
-## Contact form — connection still required
-The form is intentionally validation-only until connected. It does not send or store details, claim a message was sent, or require a backend to render. Users can immediately use the working email and telephone links.
+## Contact form activation required before launch
 
-To activate submissions, set FORM_ENDPOINT in js/script.js to an HTTPS service endpoint that accepts JSON POST requests. Set up the recipient, allowed origin/CORS, server-side validation, spam protection, retention and appropriate privacy text in that service. Keep API secrets on the server. Adapt the fetch payload to your provider if it requires a different format. The button and disclosure automatically change when the endpoint is configured. Success is displayed only on a 2xx response; failed requests preserve the form fields. Test actual message delivery before launch.
+The form now submits by HTTPS POST to https://formsubmit.co/hello@ascentlearning.net. FormSubmit handles delivery and its default CAPTCHA remains enabled. A honeypot adds spam filtering. Native submission works without JavaScript; JavaScript adds accessible inline validation. There is no simulated success message: visitors complete verification on the provider’s page. Email replies use the parent’s submitted email address.
 
-## Content and assets
-All substantive tutoring copy, service topics, qualifications, process steps, six service areas, FAQs and contact details are from the supplied PDF. Formatting and typographic punctuation have been normalized. Additional interface labels explain navigation and form behavior. No prices, testimonials, credentials or availability claims were invented. Optional image instructions are in images/assets/README.txt; no fake portrait is included.
+The owner needs to:
 
-## Accessibility and responsive behavior
-Semantic landmarks; skip link; visible focus indicators; descriptive form labels and inline validation; live submission status; mobile navigation with expanded state and Escape handling; native keyboard-accessible FAQ disclosures; reduced-motion support; responsive card and column layouts. Essential content and navigation work without JavaScript. Smooth scrolling respects reduced-motion preferences.
+1. Ensure hello@ascentlearning.net exists as a receiving mailbox or alias with your email provider. Changing website text does not create an inbox or configure domain MX records.
+2. Serve the site over HTTP or HTTPS, submit a test inquiry, then open the activation email in hello@ascentlearning.net and confirm the form. Check spam if needed.
+3. Submit another test after activation and verify the full inquiry reaches the inbox and Reply addresses the parent. Do this on the production domain before inviting families to use the form.
 
-## Ascent Learning branding
-The company name is Ascent Learning. Aarushi’s biography, qualifications and contact details remain as supplied. The transparent PNG logo is used in every header and footer. Its master file and usage notes are in images/assets/.
+Mailbox access and activation were not available in this editing session, so end to end email delivery has not been verified. If the provider is unreachable, visitors can return to the form or use the adjacent email/phone links. Do not disable CAPTCHA or put email service secrets in browser code.
+
+Provider documentation: https://formsubmit.co/
+Design reference: https://developer.apple.com/videos/play/wwdc2025/219/
+
+## Checks
+
+Verify each page at desktop and mobile widths, keyboard navigation, reduced motion, portrait loading, external links and form validation. For a local preview: `python3 -m http.server 4173`.

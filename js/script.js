@@ -25,56 +25,105 @@ document.querySelectorAll('.faq details').forEach(detail => {
     if (detail.open) document.querySelectorAll('.faq details').forEach(other => { if (other !== detail) other.open = false; });
   });
 });
-/* FORM BACKEND SETUP:
-   1. Set FORM_ENDPOINT to an HTTPS endpoint that accepts JSON via POST.
-   2. Configure that service's recipient as garg82@gmail.com, allowed origin,
-      server-side validation, spam protection and data retention.
-   3. The endpoint must return a 2xx status ONLY after accepting the message.
-   4. Test delivery and error handling before launch. Never embed API secrets here.
-   Blank endpoint = validation-only demo; no data is sent or stored. */
-const FORM_ENDPOINT = '';
+// Native HTTPS form submission keeps provider CAPTCHA and works without JavaScript.
 const form = document.querySelector('#contact-form');
 if (form) {
+  form.noValidate = true;
   const status = document.querySelector('#form-status');
-  const submit = form.querySelector('button[type="submit"]');
   const required = [...form.querySelectorAll('[required]')];
-  const errorIds = { 'parent-name': 'name-error', email: 'email-error', grade: 'grade-error', message: 'message-error' };
   function validate(field) {
-    let error = '';
-    if (!field.value.trim()) error = 'Please complete this field.';
-    else if (!field.validity.valid) error = field.type === 'email' ? 'Please enter a valid email address.' : 'Please check this field.';
+    const error = !field.value.trim() ? 'Please complete this field.' : !field.validity.valid ? 'Please enter a valid email address.' : '';
     field.setAttribute('aria-invalid', String(Boolean(error)));
-    document.getElementById(errorIds[field.id]).textContent = error;
+    document.getElementById(field.getAttribute('aria-describedby')).textContent = error;
     return !error;
   }
   required.forEach(field => field.addEventListener('input', () => {
     if (field.getAttribute('aria-invalid') === 'true') validate(field);
   }));
-  if (FORM_ENDPOINT) {
-    document.querySelector('#form-note').textContent = 'Share your learning goals to request a free consultation. Your details will be sent to Aarushi to respond to your inquiry.';
-    submit.textContent = 'Request a Free Consultation ↗';
-  }
-  form.addEventListener('submit', async event => {
-    event.preventDefault();
-    status.textContent = '';
+  form.addEventListener('submit', event => {
     const invalid = required.filter(field => !validate(field));
-    if (invalid.length) { status.textContent = 'Please correct the highlighted fields.'; invalid[0].focus(); return; }
-    if (!FORM_ENDPOINT) {
-      status.textContent = 'Your details are complete, but no message has been sent. Please email garg82@gmail.com or call (408) 821-4380 to arrange your free consultation.';
-      status.focus(); return;
+    if (invalid.length) {
+      event.preventDefault(); status.textContent = 'Please correct the highlighted fields.'; invalid[0].focus(); return;
     }
-    submit.disabled = true;
-    status.textContent = 'Sending your request…';
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
-    try {
-      const response = await fetch(FORM_ENDPOINT, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.fromEntries(new FormData(form))),signal:controller.signal});
-      if (!response.ok) throw new Error('Submission failed');
-      status.textContent = 'Thank you. Your consultation request has been sent.';
-      form.reset();
-      required.forEach(field => field.removeAttribute('aria-invalid'));
-    } catch (_) {
-      status.textContent = 'We could not confirm delivery. Your details remain here. Please email garg82@gmail.com or call (408) 821-4380.';
-    } finally { clearTimeout(timeout); submit.disabled = false; status.focus(); }
+    status.textContent = 'Continue to the secure verification step to finish your request. If it does not load, please call (408) 821 4380 or email hello@ascentlearning.net.';
   });
+  window.addEventListener('pageshow', () => { status.textContent = ''; });
 }
+// Entrance motion uses translate independently from interactive transforms.
+const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+if ('IntersectionObserver' in window) {
+  const observer = new IntersectionObserver(entries => {
+    const visible = entries.filter(entry => entry.isIntersecting);
+    visible.forEach((entry, index) => {
+      if (!motion.matches) entry.target.animate([
+        { opacity: .3, translate: '0 28px' },
+        { opacity: 1, translate: '0 0' }
+      ], { duration: 850, delay: Math.min(index * 75, 225), easing: 'cubic-bezier(.16,1,.3,1)', fill: 'backwards' });
+      observer.unobserve(entry.target);
+    });
+  }, { threshold: .08 });
+  document.querySelectorAll('.hero-grid > div > *, .hero-note, .card, .tutor-grid > *, .steps li, .form-panel, .section h2, .page-intro h1').forEach(el => observer.observe(el));
+}
+// Interpolate pointer light and a small magnetic offset; stop frames at rest.
+const surfaces = [];
+document.querySelectorAll('.button, .card, .hero-note').forEach(surface => {
+  let frame = 0, last = 0;
+  let x = 50, y = 25, targetX = 50, targetY = 25;
+  let dx = 0, dy = 0, targetDX = 0, targetDY = 0;
+  const isButton = surface.matches('.button');
+  function draw(time) {
+    const blend = 1 - Math.exp(-Math.min(time - (last || time - 16), 64) / 85);
+    last = time;
+    x += (targetX - x) * blend; y += (targetY - y) * blend;
+    dx += (targetDX - dx) * blend; dy += (targetDY - dy) * blend;
+    surface.style.setProperty('--light-x', `${x}%`);
+    surface.style.setProperty('--light-y', `${y}%`);
+    surface.style.setProperty('--magnet-x', `${dx}px`);
+    surface.style.setProperty('--magnet-y', `${dy}px`);
+    const moving = Math.abs(x-targetX)+Math.abs(y-targetY)+Math.abs(dx-targetDX)+Math.abs(dy-targetDY) > .08;
+    frame = moving ? requestAnimationFrame(draw) : 0;
+    if (!moving) last = 0;
+  }
+  function schedule() { if (!frame) frame = requestAnimationFrame(draw); }
+  function reset() {
+    cancelAnimationFrame(frame); frame = 0; last = 0;
+    x = targetX = 50; y = targetY = 25; dx = dy = targetDX = targetDY = 0;
+    ['--light-x','--light-y','--magnet-x','--magnet-y'].forEach(key => surface.style.removeProperty(key));
+  }
+  surfaces.push(reset);
+  surface.addEventListener('pointermove', event => {
+    if (motion.matches || !finePointer.matches || event.pointerType === 'touch') return;
+    const bounds = surface.getBoundingClientRect();
+    targetX = Math.max(0, Math.min(100, (event.clientX - bounds.left) / bounds.width * 100));
+    targetY = Math.max(0, Math.min(100, (event.clientY - bounds.top) / bounds.height * 100));
+    targetDX = isButton ? (targetX - 50) * .075 : 0;
+    targetDY = isButton ? (targetY - 50) * .055 : 0;
+    schedule();
+  });
+  surface.addEventListener('pointerleave', () => {
+    targetX = 50; targetY = 25; targetDX = targetDY = 0;
+    if (!motion.matches && finePointer.matches) schedule();
+  });
+});
+document.querySelectorAll('.faq details').forEach(detail => {
+  detail.addEventListener('toggle', () => {
+    if (detail.open && !motion.matches) detail.querySelector('p').animate([
+      {opacity:0,translate:'0 -8px'}, {opacity:1,translate:'0 0'}
+    ], {duration:350,easing:'cubic-bezier(.16,1,.3,1)'});
+  });
+});
+if (menu && navigation) menu.addEventListener('click', () => {
+  if (navigation.classList.contains('is-open') && !motion.matches) navigation.animate([
+    {opacity:0,translate:'0 -10px'}, {opacity:1,translate:'0 0'}
+  ], {duration:300,easing:'cubic-bezier(.16,1,.3,1)'});
+});
+function resetMotion() {
+  if (motion.matches || !finePointer.matches) {
+    surfaces.forEach(reset => reset());
+    document.getAnimations().forEach(animation => animation.cancel());
+  }
+}
+motion.addEventListener('change', resetMotion);
+finePointer.addEventListener('change', resetMotion);
+document.addEventListener('visibilitychange', () => { if (document.hidden) surfaces.forEach(reset => reset()); });
