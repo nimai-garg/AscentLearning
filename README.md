@@ -1,6 +1,6 @@
 # Ascent Learning
 
-Four static HTML pages. No build step. Serve the repository over HTTP locally, or upload the HTML files plus css/, js/ and images/ to the existing static host.
+Four static HTML pages. No build step. Serve the repository over HTTP locally, or upload index.html, about/, services/, contact/, the legacy .html redirect files, css/, js/ and images/ to the existing static host.
 
 ## September 2026 update
 
@@ -26,3 +26,11 @@ Design reference: https://developer.apple.com/videos/play/wwdc2025/219/
 ## Checks
 
 Verify each page at desktop and mobile widths, keyboard navigation, reduced motion, portrait loading, external links and form validation. For a local preview: `python3 -m http.server 4173`.
+
+## Clean page URLs
+
+The public routes are `/`, `/about/`, `/services/`, and `/contact/`. Each subpage lives in its own directory with an `index.html`, so ordinary static hosting serves these routes without framework rewrites. Internal navigation and assets use root-relative URLs. Serve from the domain root over HTTP/HTTPS rather than opening HTML directly from disk.
+
+Edit `about/index.html`, `services/index.html`, and `contact/index.html` for page content. The old `about.html`, `services.html`, and `contact.html` files are compatibility redirects; retain them for bookmarks and old search results. JavaScript redirects preserve queries and consultation anchors; a meta refresh and clickable link provide fallbacks without JavaScript. The home script normalizes `/index.html` to `/`.
+
+Deploy the new page directories along with the redirect files. This repository change does not publish the live domain. If the host supports permanent HTTP redirects, map the old `.html` paths to their corresponding directory routes there for stronger search engine migration signals. The included compatibility redirects work without that host-specific setup.

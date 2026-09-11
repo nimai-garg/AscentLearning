@@ -2,6 +2,8 @@
    navigation and SEO work without JavaScript, including when opened from disk.
    Canonical reusable copies are in partials/; copy edits into all four pages. */
 'use strict';
+// Normalize the home address without reloading or discarding query/hash data.
+if (location.pathname === '/index.html') history.replaceState(null, '', '/' + location.search + location.hash);
 document.documentElement.classList.add('js');
 const menu = document.querySelector('.menu-toggle');
 const navigation = document.querySelector('#navigation');
@@ -19,12 +21,6 @@ if (menu && navigation) {
   navigation.addEventListener('click', event => { if (event.target.closest('a')) closeMenu(); });
   window.matchMedia('(min-width: 901px)').addEventListener('change', closeMenu);
 }
-// Native details/summary supplies keyboard accessibility and works without JS.
-document.querySelectorAll('.faq details').forEach(detail => {
-  detail.addEventListener('toggle', () => {
-    if (detail.open) document.querySelectorAll('.faq details').forEach(other => { if (other !== detail) other.open = false; });
-  });
-});
 // Native HTTPS form submission keeps provider CAPTCHA and works without JavaScript.
 const form = document.querySelector('#contact-form');
 if (form) {
@@ -63,7 +59,7 @@ if ('IntersectionObserver' in window) {
       observer.unobserve(entry.target);
     });
   }, { threshold: .08 });
-  document.querySelectorAll('.hero-grid > div > *, .hero-note, .card, .tutor-grid > *, .steps li, .form-panel, .section h2, .page-intro h1').forEach(el => observer.observe(el));
+  document.querySelectorAll('.hero-grid > div > *, .hero-note, .card, .tutor-grid > *, .steps li, .form-panel, .section h2, .page-intro h1, .benefit-panel, .credential-panel, .experience-panel').forEach(el => observer.observe(el));
 }
 // Interpolate pointer light and a small magnetic offset; stop frames at rest.
 const surfaces = [];
@@ -106,13 +102,49 @@ document.querySelectorAll('.button, .card, .hero-note').forEach(surface => {
     if (!motion.matches && finePointer.matches) schedule();
   });
 });
-document.querySelectorAll('.faq details').forEach(detail => {
-  detail.addEventListener('toggle', () => {
-    if (detail.open && !motion.matches) detail.querySelector('p').animate([
-      {opacity:0,translate:'0 -8px'}, {opacity:1,translate:'0 0'}
-    ], {duration:350,easing:'cubic-bezier(.16,1,.3,1)'});
+// Preserve native details behavior without JavaScript; animate both directions when enhanced.
+const accordions = [...document.querySelectorAll('.faq details')].map(detail => {
+  const summary = detail.querySelector('summary');
+  const answer = detail.querySelector('.faq-answer');
+  let expanded = detail.open;
+  let animation = null;
+  function settle() {
+    detail.open = expanded;
+    detail.style.removeProperty('height');
+    detail.style.removeProperty('overflow');
+    animation = null;
+  }
+  function setExpanded(next) {
+    const start = detail.getBoundingClientRect().height;
+    if (animation) {
+      animation.oncancel = null;
+      animation.onfinish = null;
+      animation.cancel();
+    }
+    expanded = next;
+    detail.dataset.expanded = String(next);
+    summary.setAttribute('aria-expanded', String(next));
+    if (motion.matches || !detail.animate) { settle(); return; }
+    detail.open = true;
+    const border = 2;
+    const end = summary.getBoundingClientRect().height + border + (next ? answer.getBoundingClientRect().height : 0);
+    detail.style.overflow = 'hidden';
+    detail.style.height = `${start}px`;
+    animation = detail.animate([{height:`${start}px`}, {height:`${end}px`}], {
+      duration: 420, easing: 'cubic-bezier(.22,1,.36,1)'
+    });
+    animation.onfinish = settle;
+    animation.oncancel = settle;
+  }
+  summary.addEventListener('click', event => {
+    event.preventDefault();
+    const next = !expanded;
+    if (next) accordions.forEach(other => { if (other.detail !== detail) other.close(); });
+    setExpanded(next);
   });
+  return { detail, close: () => { if (expanded) setExpanded(false); }, finish: () => { if (animation) animation.finish(); } };
 });
+window.addEventListener('resize', () => accordions.forEach(item => item.finish()));
 if (menu && navigation) menu.addEventListener('click', () => {
   if (navigation.classList.contains('is-open') && !motion.matches) navigation.animate([
     {opacity:0,translate:'0 -10px'}, {opacity:1,translate:'0 0'}
